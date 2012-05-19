@@ -349,17 +349,27 @@ var Strings = new function() {
     new RegExp('(^|\\s)' + fullname + '(\\s|$)').test(string);
   };
   this.join = function(delim, strs) {
-      if (strs.length === 0)
-          return '';
+    if (strs.length === 0)
+        return '';
 
-      var result = strs[0];
-      for (var i=1, len=strs.length; i<len; i++) {
-          result += delim;
-          result += strs[i];
-      }
-      return result;
+    var result = strs[0];
+    for (var i=1, len=strs.length; i<len; i++) {
+        result += delim;
+        result += strs[i];
+    }
+    return result;
   };
-  this.splitOne = function(str, delimit) {
+  this.keyvalue = function(str, delimit) {
+    var result = {key: '', value: ''};
+    var len = !!str? str.length: 0;
+    var index = len>0? str.indexOf(delimit): -1;
+    if (index > 0) {
+      result.key = str.substring(0, index);
+    }
+    if (index < len) {
+      result.value = str.substring(index + 1);
+    }
+    return result;
   };
   this.fill = function(segment, count) {
     var result = [];
