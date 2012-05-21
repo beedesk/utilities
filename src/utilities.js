@@ -594,6 +594,16 @@ var Arrays = new function() {
     }
     return result;
   };
+  this.contains = function(array, that) {
+    var contained = false;
+    for (var i=array.length-1; i >= 0; i--) {
+      var ths = array[i];
+      if (ths === that) {
+        contained = true;
+      }
+    }
+    return contained;
+  };
   this.extract = function(names, entity) {
     var result = [];
     for (var i = 0; i < names.length; ++i) {
