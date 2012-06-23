@@ -200,6 +200,9 @@ var Dates = new function() {
 };
 
 var Threads = new function() {
+  /*
+   *  depreciated -- use $.promise() instead
+   */
   /**
    * A utility to make it easy to perform an action conditioning
    * on all async calls' results ready
@@ -288,8 +291,10 @@ var Threads = new function() {
   };
 };
 
-var Finds = new function() {
-  this.match = function(entry, filters) {
+var Matches = new function() {
+  var instance = this;
+
+  instance.match = function(entry, filters) {
     var result = false;
     if (!$.isFunction(filters)) {
       var matchAll = true;
@@ -311,7 +316,10 @@ var Finds = new function() {
     }
     return result;
   };
+  return instance;
 };
+// Backward compatibility
+var Finds = Matches;
 
 var HashSearch = new function() {
   this.getSearchString = function(search) {
@@ -521,7 +529,7 @@ var Hashs = new function() {
         }
     }
     return true;
-  }
+  };
   // </isEquals>
 
   return this;
@@ -560,14 +568,14 @@ var URLs = new function() {
          relative: (a.href.match(/tps?:\/\/[^\/]+(.+)/) || [,''])[1],
          segments: a.pathname.replace(/^\//,'').split('/')
      };
- }
+  };
   return instance;
-}
+};
                            
 var NameArrays = new function() {
   var instance = this;
   this.path = function(node, zeroormore) {
-    var result;
+    var result = undefined;
     if (arguments.length === 1) {
       result = node;
     } else if (node.children !== undefined && node.children.length > 0){
@@ -587,14 +595,14 @@ var NameArrays = new function() {
 
 var Arrays = new function() {
   var instance = this;
-  this.apply = function(fn, items) {
+  instance.apply = function(fn, items) {
     var result = [];
     for (var i = 0; i < items.length; ++i) {
       result[i] = fn(items[i]);
     }
     return result;
   };
-  this.contains = function(array, that) {
+  instance.contains = function(array, that) {
     var contained = false;
     for (var i=array.length-1; i >= 0; i--) {
       var ths = array[i];
@@ -604,7 +612,7 @@ var Arrays = new function() {
     }
     return contained;
   };
-  this.extract = function(names, entity) {
+  instance.extract = function(names, entity) {
     var result = [];
     for (var i = 0; i < names.length; ++i) {
       var item = entity[names[i]];
@@ -616,21 +624,21 @@ var Arrays = new function() {
     }
     return result;
   };
-  this.order = function(array) {
+  instance.order = function(array) {
     var result = {};
     for (var i=array.length-1; i >= 0; i--) {
       result[array] = i;
     }
     return result;
   };
-  this.keys = function(hash) {
+  instance.keys = function(hash) {
     var result = [];
     for (var key in hash) {
       result.push(key);
     }
     return result;
   };
-  this.intersect = function(ths, that, sorted) {
+  instance.intersect = function(ths, that, sorted) {
     // intersect 2 arrays and return 3 (left, middle, right) where the middle is
     // the intersect, left is left-only, etc.
     var ai=0, bi=0;
@@ -667,20 +675,60 @@ var Arrays = new function() {
     }
     return result;
   };
-  this.collect = function(array) {
+  instance.collect = function(array) {
     var fn = function(entry) {
       array.push(entry);
     };
     return fn;
   };
-  this.clone = function(array) {
+  instance.clone = function(array) {
     return array.slice(0);
   };
-  this.remove = function(array, from, to) {
+  instance.remove = function(array, from, to) {
     //Array Remove - By John Resig (MIT Licensed)
     var rest = array.slice((to || from) + 1 || array.length);
     array.length = from < 0 ? array.length + from : from;
     return array.push.apply(array, rest);
+  };
+  return instance;
+};
+
+// Example of HashArray: [{id: 'foo', title: 'title'}, {id: 'bar'}]
+var HashArrays = new function() {
+  var instance = this;
+
+  instance.remove = function(array, filter) {
+    var result = [];
+    for (var i=(array.length - 1); i>=0; i--) {
+      var item = array[i];
+      if (Finds.match(item, filter)) {
+        result.push(item);
+        array.splice(i, 1);
+      }
+    }
+    return result.reverse();
+  };
+  instance.find = function(array, filters) {
+    var result = [];
+    for (var i=0, len=array.length; i<len; i++) {
+      var item = array[i];
+      if (Matches.match(item, filters)) {
+        result.push(item);
+      }
+    }
+    return result;
+  };
+  instance.findOnce = function(array, filters) {
+    var result = undefined;
+    for (var i=0, len=array.length; i<len; i++) {
+      var item = array[i];
+
+      if (Matches.match(item, filters)) {
+        result = item;
+        break;
+      }
+    }
+    return result;
   };
   return instance;
 };
@@ -746,6 +794,43 @@ var Arguments = new function() {
     }
   };
   return this;
+};
+
+/**
+ * Supports trigger, bind, unbind
+ * 
+ * @author: thomas at beedesk DOT com
+ */
+function Binder(conf) {
+  var handlers = [];
+  this.bind = function(type, fn) {
+    var filter = typeof(type) === "string"?  {type: type}: type;
+    var handler = $.extend({fn: fn}, filter);
+    return handlers.push(handler);
+  };
+  this.unbind = function(type, fn) {
+    var filter = typeof(type) === "string"?  {type: type}: type;
+    filter = fn === undefined? filter: $.extend({fn: fn}, filter);
+    HashArrays.remove(handlers, filter);
+  };
+  this.trigger = function(type, oneormoreparams) {
+    var count = 0;
+
+    var args = Array.prototype.slice.call(arguments).splice(1);
+    var filter = typeof(type) === "string"?  {type: type}: type;
+    var matches = HashArrays.find(handlers, filter);
+    var wildcards = HashArrays.find(handlers, {type: '*'});
+
+    var items = [].concat(matches).concat(wildcards);
+    for (var j=0, len=items.length; j < len; j++) {
+      count++;
+      ret = items[j].fn.apply(this, args);
+      if (ret === false) {
+        break;
+      }
+    }
+    return count;
+  };
 };
 
 var Base64 = new function() {
