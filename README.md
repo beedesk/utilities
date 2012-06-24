@@ -1,37 +1,37 @@
-Utilities JS
+## Utilities JS
 =========
 
-# Some Humble JavaScript Utilities
+### Some Humble JavaScript Utilities
 
-### `Dates`
+#### `Dates`
 * `toISOString`
 * `fromISOString`
 
-### `Matches`
+#### `Matches`
 
-### `URLs`, `HashSearch`
+#### `URLs`, `HashSearch`
 * parse URLs
 * parse Search parts (?key=value&)
 
-### `Strings`
+#### `Strings`
 * quotes
 * `trim`
 * `fill`
 * etc.
 
-### `Hashs` (aka: associates map, or simply objects)
+#### `Hashs` (aka: associates map, or simply objects)
 * `isEquals` -- deep compare
 * `simplify`
 * `has`
 * `apply`
 * etc.
 
-### `Binder`
+#### `Binder`
 * `bind`
 * `unbind`
 * `trigger`
 
-### Base64
-* encode
-* decode
+#### `Base64`
+* `encode`
+* `decode`
 
