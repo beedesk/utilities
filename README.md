@@ -8,6 +8,14 @@
 * `fromISOString`
 
 #### `Matches`
+* `match`
+* `find`
+* `findOnce`
+
+#### `Arrays`
+* `intersect`
+* `extract`
+* `contains`
 
 #### `URLs`, `HashSearch`
 * parse URLs
