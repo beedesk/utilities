@@ -208,12 +208,12 @@ var Threads = new function() {
    * on all async calls' results ready
    *
    * Usage:
-   * var river = Thread.river();
+   * var river = Threads.river();
    * river.join(
-   *   async1(param1, trunk.branch("entry")),
-   *   async1(param2, trunk.branch("group")),
+   *   async1(param1, river.branch("entry")),
+   *   async1(param2, river.branch("group")),
    *   function(joined) {
-   *     var entry = joined.entry[1];
+   *     var entry = joined.entry[0];
    *     var group = joined.group[1];
    *   }
    * );
@@ -227,7 +227,7 @@ var Threads = new function() {
       var count = 0;
       var fun;
 
-      this.branch = function(name) {
+      instance.branch = function(name) {
         if (names[name] !== undefined) {
           throw "Duplicated name";
         } else {
@@ -250,7 +250,7 @@ var Threads = new function() {
         };
         return method;
       };
-      this.join = function(oneormorebranches, fn) {
+      instance.join = function(oneormorebranches, fn) {
         console.warn("[river] join() " + arguments.length + " expected call: " + size + " called: " + count);
         fun = arguments[arguments.length - 1];
         Arguments.assertNonNullFn(fun);
@@ -286,7 +286,7 @@ var Threads = new function() {
           queue.push(fn);
         }
       };
-    }
+    };
     return result;
   };
 };
@@ -542,7 +542,7 @@ var URLs = new function() {
   // properties (inherent) to get the desired URL data. Some String
   // operations are used (to normalize results across browsers).
   // Credit: http://james.padolsey.com/javascript/parsing-urls-with-the-dom/
-  this.parse = function(url) {
+  instance.parse = function(url) {
      var a =  document.createElement('a');
      a.href = url;
      return {
