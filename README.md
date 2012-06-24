@@ -1,7 +1,7 @@
 ## Utilities JS
 =========
 
-### Some Humble JavaScript Utilities
+### A Humble Collection of JavaScript Utilities That You Don't Want to Write Again
 
 #### `Dates`
 * `toISOString`
@@ -43,3 +43,6 @@
 * `encode`
 * `decode`
 
+## License
+
+BSD-Style
