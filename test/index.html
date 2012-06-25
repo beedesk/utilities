@@ -192,7 +192,7 @@
           equal(call1[0], 'hello');
           equal(call1[1], 'world');
         };
-        module('Binds.simple');
+        module('Binds.simple()');
         test('bind(), unbind(), trigger()', function() {
           assertBindBasics(function(old) {
             return old? old: Binds.simple();
@@ -208,7 +208,8 @@
             return old? old: Binds.simple();
           });
         });
-        module('Binds.retentive');
+
+        module('Binds.retentive()');
         test('bind(), unbind(), trigger()', function() {
           assertBindBasics(function(old) {
             return old? old.forget(): Binds.retentive();
