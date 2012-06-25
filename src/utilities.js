@@ -200,9 +200,6 @@ var Dates = new function() {
 };
 
 var Threads = new function() {
-  /*
-   *  depreciated -- use $.promise() instead
-   */
   /**
    * A utility to make it easy to perform an action conditioning
    * on all async calls' results ready
@@ -251,7 +248,6 @@ var Threads = new function() {
         return method;
       };
       instance.join = function(oneormorebranches, fn) {
-        console.warn("[river] join() " + arguments.length + " expected call: " + size + " called: " + count);
         fun = arguments[arguments.length - 1];
         Arguments.assertNonNullFn(fun);
 
@@ -436,6 +432,15 @@ var Hashs = new function() {
       for (var name in obj) {
         result = false;
         break;
+      }
+    }
+    return result;
+  };
+  this.size = function(obj) {
+    var result = 0;
+    if (!!obj) {
+      for (var name in obj) {
+        ++result;
       }
     }
     return result;
@@ -801,37 +806,87 @@ var Arguments = new function() {
  * 
  * @author: thomas at beedesk DOT com
  */
-function Binder(conf) {
-  var handlers = [];
-  this.bind = function(type, fn) {
-    var filter = typeof(type) === "string"?  {type: type}: type;
-    var handler = $.extend({fn: fn}, filter);
-    return handlers.push(handler);
-  };
-  this.unbind = function(type, fn) {
-    var filter = typeof(type) === "string"?  {type: type}: type;
-    filter = fn === undefined? filter: $.extend({fn: fn}, filter);
-    HashArrays.remove(handlers, filter);
-  };
-  this.trigger = function(type, oneormoreparams) {
-    var count = 0;
+var Binds = new function() {
+  var instance = this;
 
-    var args = Array.prototype.slice.call(arguments).splice(1);
-    var filter = typeof(type) === "string"?  {type: type}: type;
-    var matches = HashArrays.find(handlers, filter);
-    var wildcards = HashArrays.find(handlers, {type: '*'});
+  function Binder(conf) {
+    var binder = {};
+    var handlers = [];
 
-    var items = [].concat(matches).concat(wildcards);
-    for (var j=0, len=items.length; j < len; j++) {
-      count++;
-      ret = items[j].fn.apply(this, args);
-      if (ret === false) {
-        break;
+    binder.bind = function(type, fn) {
+      var filter = typeof(type) === "string"?  {type: type}: type;
+      var handler = $.extend({fn: fn}, filter);
+      return handlers.push(handler);
+    };
+    binder.unbind = function(type, fn) {
+      var filter = typeof(type) === "string"?  {type: type}: type;
+      filter = fn === undefined? filter: $.extend({fn: fn}, filter);
+      HashArrays.remove(handlers, filter);
+    };
+    binder.trigger = function(type, oneormoreparams) {
+      var count = 0;
+
+      var args = Array.prototype.slice.call(arguments).splice(1);
+      var filter = typeof(type) === "string"?  {type: type}: type;
+      var matches = HashArrays.find(handlers, filter);
+      var wildcards = HashArrays.find(handlers, {type: '*'});
+
+      var items = [].concat(matches).concat(wildcards);
+      for (var j=0, len=items.length; j < len; j++) {
+        count++;
+        ret = items[j].fn.apply(this, args);
+        if (ret === false) {
+          break;
+        }
       }
-    }
-    return count;
+      return count;
+    };
+    return binder;
   };
+  
+  instance.simple = function(conf) {
+    return new Binder(conf);
+  };
+  instance.retentive = function(conf) {
+    var binder = {};
+    var inner = new Binder(conf);
+    var events = [];
+
+    binder.bind = function(type, fn) {
+      var result = inner.bind.apply(this, arguments);
+
+      var matched = type==='*'? events: HashArrays.find(events, {type: type});
+      for (var i=0, len=matched.length; i<len; i++) {
+        fn.apply(this, matched[i].arguments);
+      }
+      
+      return result;
+    };
+    binder.unbind = function(type, fn) {
+      return inner.unbind.apply(this, arguments);
+    };
+    binder.trigger = function(type, args) {
+      var result = inner.trigger.apply(this, arguments);
+
+      var args = Array.prototype.slice.call(arguments).splice(1);
+      events.push({type: type, arguments: args});
+
+      return result;
+    };
+    binder.forget = function(conf) {
+      events = [];
+      return binder;
+    };
+
+    return binder; 
+  };
+
+  return instance;
 };
+
+function Binder() {
+  return Binds.simple();
+}
 
 var Base64 = new function() {
   // This code was written by Tyler Akins and has been placed in the

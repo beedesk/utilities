@@ -96,12 +96,12 @@
           equal(item.extra, undefined);
         });
         
-        module('Binder');
-        test('bind(), unbind(), trigger()', function() {
-          binder = new Binder();
-          
+        module('Binds');
+        function assertBindBasics(refresh) {
+          var binder = refresh(null);
           var call1 = false, call2 = false, call3 = false;
           
+          // Test 2 listeners, wrong event
           binder.bind('foo', function() {
             call1 = true;
           });
@@ -110,36 +110,43 @@
           }
           binder.bind('foo', fn);
           binder.trigger('abc');
-          ok(!call1);
-          ok(!call2);
+          ok(!call1, 'No trigger for mismatch "type".');
+          ok(!call2, 'No trigger for mismatch "type".');
 
+          // Test 2 listeners, right event
+          binder = refresh(binder);
           binder.trigger('foo');
-          ok(call1);
-          ok(call2);
+          ok(call1, 'Trigger for matched "type".');
+          ok(call2, 'Trigger for matched "type".');
           
+          // Test wildcard
+          binder = refresh(binder);
+          call1 = call2 = false;
           binder.bind('*', function() {
             call3 = true;
           });
-
-          call1 = call2 = false;
           binder.trigger('foo');
-          ok(call1);
-          ok(call2);
-          ok(call3);
+          ok(call1, 'Trigger for matched "type".');
+          ok(call2, 'Trigger for matched "type".');
+          ok(call3, 'Trigger for wildcard "type".');
 
+          // Test no-op unbind
+          binder = refresh(binder);
           call1 = call2 = call3 = false;
           binder.unbind('random');
           binder.trigger('foo');
-          ok(call1);
-          ok(call2);
-          ok(call3);
+          ok(call1, 'Trigger for matched "type".');
+          ok(call2, 'Trigger for matched "type".');
+          ok(call3, 'Trigger for matched "type".');
 
+          // Test unbind
+          binder = refresh(binder);
           call1 = call2 = call3 = false;
           binder.unbind('foo', fn);
           binder.trigger('foo');
-          ok(call1);
-          ok(!call2);
-          ok(call3);
+          ok(call1, 'Trigger for matched "type".');
+          ok(!call2, 'No trigger for unbinded.');
+          ok(call3, 'Trigger for matched "type".');
           
           call1 = call2 = call3 = false;
           binder.unbind('foo');
@@ -147,10 +154,9 @@
           ok(!call1);
           ok(!call2);
           ok(call3);          
-        });
-        test('contin', function() {
-          binder = new Binder();
-          
+        };
+        function assertBindsContin(refresh) {
+          var binder = refresh(null);
           var call1 = false, call2 = false, call3 = false;
           
           binder.bind('foo', function() {
@@ -167,10 +173,9 @@
           // !warning! behaviour subject to change. We might follow j
           ok(call1);
           ok(!call2);
-        });
-        test('arguments', function() {
-          binder = new Binder();
-
+        };
+        function assertBindsArguments(fn) {
+          var binder = fn();
           var call1 = null, call2 = null, call3 = null;
           
           binder.bind('foo', function(p1, p2) {
@@ -186,6 +191,120 @@
           equal(call1.length, 2);
           equal(call1[0], 'hello');
           equal(call1[1], 'world');
+        };
+        module('Binds.simple');
+        test('bind(), unbind(), trigger()', function() {
+          assertBindBasics(function(old) {
+            return old? old: Binds.simple();
+          });
+        });
+        test('contin', function() {
+          assertBindBasics(function(old) {
+            return old? old: Binds.simple();
+          });
+        });
+        test('arguments', function() {
+          assertBindsArguments(function(old) {
+            return old? old: Binds.simple();
+          });
+        });
+        module('Binds.retentive');
+        test('bind(), unbind(), trigger()', function() {
+          assertBindBasics(function(old) {
+            return old? old.forget(): Binds.retentive();
+          });
+        });
+        test('contin', function() {
+          assertBindBasics(function(old) {
+            return old? old.forget(): Binds.retentive();
+          });
+        });
+        test('arguments', function() {
+          assertBindsArguments(function(old) {
+            return old? old.forget(): Binds.retentive();
+          });
+        });
+        test('retention', function() {
+          var binder = Binds.retentive();
+          var call1 = 0, call2 = 0, call3 = 0, call4 = 0;
+          
+          // Test 2 listeners, wrong event
+          binder.bind('foo', function() {
+            ++call1;
+          });
+          var fn = function() {
+            ++call2;
+          }
+          binder.bind('foo', fn);
+          binder.trigger('abc');
+          equal(call1, 0, 'No trigger for mismatch "type".');
+          equal(call2, 0, 'No trigger for mismatch "type".');
+
+          // Test 2 listeners, right event
+          binder.trigger('foo');
+          equal(call1, 1, 'Trigger for mismatch "type".');
+          equal(call2, 1, 'Trigger for mismatch "type".');
+          
+          binder.bind('foo', function() {
+            ++call3;
+          });
+          equal(call1, 1, 'Trigger for mismatch "type".');
+          equal(call2, 1, 'Trigger for mismatch "type".');
+          equal(call3, 1, 'Trigger for mismatch "type".');
+
+          binder.unbind('foo', fn);
+          binder.trigger('foo');
+          equal(call1, 2, 'Trigger for mismatch "type".');
+          equal(call2, 1, 'Trigger for mismatch "type".');
+          equal(call3, 2, 'Trigger for mismatch "type".');
+        });
+        
+        module('Threads');
+        asyncTest('river()', function() {
+          var river = Threads.river();
+
+          var joined = null;
+          var combined = null;
+          var caller1 = function(fn) {
+            fn('caller1', 'foo');
+          }
+          var caller2 = function(fn) {
+            setTimeout(function() {
+              fn('caller2');
+            }, 10);
+          }
+          var caller3 = function(fn) {
+            setTimeout(function() {
+              fn('caller3', 'bar');
+            }, 15);            
+          }
+          var caller4 = function(fn) {
+            fn('caller4');
+          }
+
+          var joiner = function(calls) {
+            combined = calls;
+          }
+
+          river.join(
+            caller1(river.branch('document')),
+            caller2(river.branch('loggedin')),
+            caller3(river.branch('page')),
+            caller4(river.branch('click')),
+            joiner
+          );
+
+          setTimeout(function() {  
+            ok(combined !== null && combined !== undefined, 'Arguments returned');
+            equal(Hashs.size(combined), 4, 'Expected number of calls');
+            equal(combined['document'].length, 2);
+            equal(combined['document'][0], 'caller1');
+            equal(combined['document'][1], 'foo');
+            
+            equal(combined['loggedin'].length, 1);
+            equal(combined['loggedin'][0], 'caller2');
+            start();
+          }, 50);
         });
       });
     </script>
