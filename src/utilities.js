@@ -349,10 +349,23 @@ var HashSearch = new function() {
 };
 
 var Strings = new function() {
-  this.has = function(string, fullname) {
+  var instance = this;
+  instance.has = function(string, fullname) {
     new RegExp('(^|\\s)' + fullname + '(\\s|$)').test(string);
   };
-  this.join = function(delim, strs) {
+  instance.format = function(args) {
+    // credit: http://www.thirstymind.org/2009/10/17/
+    // implementing-pythons-string-format-in-javascript/
+    var formatted_str = arguments[0] || '';
+
+    for(var i=1; i<arguments.length; i++){
+        var re = new RegExp("\\{"+(i-1)+"}", "gim");
+        formatted_str = formatted_str.replace(re, arguments[i]);
+    }
+    
+    return formatted_str;
+  };
+  instance.join = function(delim, strs) {
     if (strs.length === 0)
         return '';
 
@@ -363,7 +376,7 @@ var Strings = new function() {
     }
     return result;
   };
-  this.keyvalue = function(str, delimit) {
+  instance.keyvalue = function(str, delimit) {
     var result = {key: '', value: ''};
     var len = !!str? str.length: 0;
     var index = len>0? str.indexOf(delimit): -1;
@@ -375,7 +388,7 @@ var Strings = new function() {
     }
     return result;
   };
-  this.fill = function(segment, count) {
+  instance.fill = function(segment, count) {
     var result = [];
     if (count == 0) {
         // no op
@@ -388,22 +401,22 @@ var Strings = new function() {
     }
     return result;
   };
-  this.mysqlquote = function(name) {
+  instance.mysqlquote = function(name) {
     return "`" + name.replace("`", "``") + "`";
   };
-  this.mssqlquote = function(name) {
+  instance.mssqlquote = function(name) {
     return "[" + name.replace("]", "]]") + "]";
   };
-  this.trim = function(str) {
+  instance.trim = function(str) {
     return str.replace(/^\s+|\s+$/, '');
   };
-  this.startsWith = function(str, prefix) {
+  instance.startsWith = function(str, prefix) {
     return str.indexOf(prefix) === 0;
   };
-  this.endsWith = function(str, suffix) {
-    return str.indexOf(suffix, this.length - suffix.length) !== -1;
+  instance.endsWith = function(str, suffix) {
+    return str.indexOf(suffix, str.length - suffix.length) !== -1;
   };
-  return this;
+  return instance;
 };
 
 var Hashs = new function() {
