@@ -561,6 +561,7 @@ var URLs = new function() {
   // operations are used (to normalize results across browsers).
   // Credit: http://james.padolsey.com/javascript/parsing-urls-with-the-dom/
   instance.parse = function(url) {
+     console.warn('to be parsed: ' + url);
      var a =  document.createElement('a');
      a.href = url;
      return {
@@ -586,6 +587,31 @@ var URLs = new function() {
          relative: (a.href.match(/tps?:\/\/[^\/]+(.+)/) || [,''])[1],
          segments: a.pathname.replace(/^\//,'').split('/')
      };
+  };
+  instance.join = function(parts) {
+    var url = '';
+    if (parts.protocol) {
+      url = parts.protocol + '://';
+    }
+    if (parts.host) {
+      url = url + parts.host;
+    }
+    if (parts.port !== null && parts.port !== undefined && parts.port !== '0') {
+      // bug on (port === '0') if not specified?
+      url = url + ':' + parts.port;
+    }
+    if (parts.path) {
+      url = url + parts.path;
+    } else {
+      url = url + '/';
+    }
+    if (parts.query) {
+      url = url + '?' + parts.query;
+    }
+    if (parts.hash) {
+      url = url + '#' + parts.hash;
+    }
+    return url;
   };
   return instance;
 };
@@ -719,7 +745,7 @@ var HashArrays = new function() {
     var result = [];
     for (var i=(array.length - 1); i>=0; i--) {
       var item = array[i];
-      if (Finds.match(item, filter)) {
+      if (Matches.match(item, filter)) {
         result.push(item);
         array.splice(i, 1);
       }
