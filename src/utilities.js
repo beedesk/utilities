@@ -348,6 +348,39 @@ var HashSearch = new function() {
   return this;
 };
 
+var Selectors = new function() {
+  var instance = this;
+
+  /***
+   * Translate: 
+   *     ['input', 'textarea'], {name: 'foo', value: null} 
+   * into
+   *     'input[name="foo"][value], textarea[name="foo"][value]
+   */
+  instance.compose = function(tags, options) {
+    var params = [];
+    var selectors = [];
+    for (var key in options) {
+      var seg;
+      var val = options[key];
+      if (val !== undefined && val !== null) {
+        seg = '[' + key + '="' + options[key] + '"]';
+      } else {
+        seg = '[' + key + ']';
+      }
+      params.push(seg);
+    }
+
+    for (var i=0, len=tags.length; i<len; i++) {
+      var sel = tags[i];
+      selectors.push(sel + Strings.concat(params));
+    }
+    return Strings.concat(selectors, ', ');
+  };
+
+  return instance;
+};
+
 var Strings = new function() {
   var instance = this;
   instance.has = function(string, fullname) {
@@ -366,6 +399,8 @@ var Strings = new function() {
     return formatted_str;
   };
   instance.join = function(delim, strs) {
+    /* arguments should've been swaped. Use concat() */
+    delim = delim || ''; 
     if (strs.length === 0)
         return '';
 
@@ -375,6 +410,9 @@ var Strings = new function() {
         result += strs[i];
     }
     return result;
+  };
+  instance.concat = function(strs, delim) {
+    return Strings.join(delim, strs);
   };
   instance.keyvalue = function(str, delimit) {
     var result = {key: '', value: ''};
@@ -561,7 +599,6 @@ var URLs = new function() {
   // operations are used (to normalize results across browsers).
   // Credit: http://james.padolsey.com/javascript/parsing-urls-with-the-dom/
   instance.parse = function(url) {
-     console.warn('to be parsed: ' + url);
      var a =  document.createElement('a');
      a.href = url;
      return {
