@@ -457,6 +457,94 @@ var Strings = new function() {
   return instance;
 };
 
+var NameValues = new function() {
+  var instance = this;
+  instance.toHash = function(namevalues, names, arraynames) {
+    var result = {};
+    
+    if (names === undefined || names === null) {
+      names = NameValues.names(namevalues);
+      if (Arrays.isa(arraynames)) {
+        names = Arrays.subtract(names, arraynames);
+      }
+    }
+    for (var i=0, len=namevalues.length; i<len; i++) {
+      var name = namevalues[i].name;
+      var value = namevalues[i].value;
+      if (Arrays.contains(names, name)) {
+        result[name] = value;
+      } else if (Arrays.contains(arraynames, name)) {
+        if (!(name in result)) {
+          result[name] = [];
+        }
+        result[name].push(value);
+      }
+    }
+    return result;
+  };
+  instance.names = function(namevalues) {
+    var result = [];
+    for (var i=0, len=namevalues.length; i<len; i++) {
+      var name = namevalues[i].name;
+      if (Arrays.contains(result, name)) { // !! inefficient !!
+        continue;
+      }
+      result.push(name);
+    }
+    return result;
+  }
+  return instance;
+};
+var Voids = new function() {
+  var instance = this;
+  var ALL = {
+      'undefined': true,
+      'null': true,
+      'emptystring': true,
+      'emptyarray': true
+  };
+  var NONE = {
+      'undefined': false,
+      'null': false,
+      'emptystring': false,
+      'emptyarray': false
+  };
+  instance.all = function() {
+    return Hashs.clone(ALL);
+  };
+  instance.none = function() {
+    return Hashs.clone(NONE);
+  };
+  instance.keep = function(value, options) {
+    options = options || {};
+    var result = false;
+    if (value === undefined) {
+      if (options['undefined'] === true) {
+        result = true;
+      }
+    } else if (value === null) {
+      if (options['null'] === true) {
+        result = true;
+      }
+    } else if (value === '') {
+      if (options['emptystring'] === true) {
+        result = true;
+      }
+    } else if (Arrays.isa(value)) {
+      if (value.length === 0) {
+        if (options['emptyarray']) {
+          result = true;
+        }
+      } else {
+        result = true;
+      }
+    } else {
+      result = true;
+    }
+    return result;
+  };
+  return instance;
+}
 var Hashs = new function() {
   this.apply = function(fn, items) {
     var result = {};
@@ -476,6 +564,59 @@ var Hashs = new function() {
       }
     }
     return result;
+  };
+  this.rake = function(obj, keys, keep) {
+    if (keys === undefined || keys === null) {
+      keys = Hashs.keys(obj);
+    } else {
+      keys = Arrays.isa(keys)? keys: [keys];
+    }
+    for (var i=0, len=keys.length; i<len; i++) {
+      var key = keys[i];
+      if (key in obj) {
+        var value = obj[key];
+        if (!Voids.keep(value)) {
+          delete obj[key];
+        }
+      }
+    }
+    return obj;
+  };
+  this.extract = function(entity, names, keep_undefined, keep_null) {
+    var result = {};
+    for (var i = 0; i < names.length; ++i) {
+      var name = names[i]; 
+      if (name in entity) {
+        var value = entity[name];
+        if (value === undefined) {
+          if (keep_undefined)
+            result[name] = value;
+        } else if (value === null) {
+          if (keep_null)
+            result[name] = value;
+        } else {
+          result[name] = value;
+        }
+      }
+    }
+    return result;
+  };
+  this.clone = function(obj) { /* only work for simple {} */
+    var result = {};
+    for (var name in obj) {
+      result[name] = obj[name];
+    }
+    return result;
+  }
+  this.wrap = function(obj, keys, prop) {
+    keys = Arrays.isa(keys)? keys: [keys];
+    for (var i=0, len=keys.length; i<len; i++) {
+      var key = keys[i];
+      if (key in obj) {
+        key[prop] = obj[key];
+      }
+    }
+    return obj;
   };
   this.isEmpty = function(obj) {
     var result = true;
@@ -676,6 +817,18 @@ var NameArrays = new function() {
 
 var Arrays = new function() {
   var instance = this;
+  instance.isa = function(array) {
+    if(Object.prototype.toString.call(array) === '[object Array]' ) {
+      return true;
+    }
+    return false;
+  };
+  instance.wrap = function(array, prop) {
+    for (var i=0, len=array.length; i<len; i++) {
+      array[i][prop] = array[i];
+    }
+    return array;
+  }
   instance.apply = function(fn, items) {
     var result = [];
     for (var i = 0; i < items.length; ++i) {
@@ -692,6 +845,15 @@ var Arrays = new function() {
       }
     }
     return contained;
+  };
+  instance.subtract = function(array, ridof) {
+    for (var i=array.length - 1; i>=0; i--) {
+      var item = array[i];
+      if (Arrays.contains(ridof, item)) {
+        Arrays.remove(array, i);
+      }
+    }
+    return array;
   };
   instance.extract = function(names, entity) {
     var result = [];
