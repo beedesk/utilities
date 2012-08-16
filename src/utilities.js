@@ -607,13 +607,13 @@ var Hashs = new function() {
       result[name] = obj[name];
     }
     return result;
-  }
+  };
   this.wrap = function(obj, keys, prop) {
     keys = Arrays.isa(keys)? keys: [keys];
     for (var i=0, len=keys.length; i<len; i++) {
       var key = keys[i];
       if (key in obj) {
-        key[prop] = obj[key];
+        obj[key] = {prop: obj[key]};
       }
     }
     return obj;
