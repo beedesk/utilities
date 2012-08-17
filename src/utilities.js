@@ -613,7 +613,9 @@ var Hashs = new function() {
     for (var i=0, len=keys.length; i<len; i++) {
       var key = keys[i];
       if (key in obj) {
-        obj[key] = {prop: obj[key]};
+        var value = {};
+        value[prop] = obj[key];
+        obj[key] = value;
       }
     }
     return obj;
@@ -825,10 +827,22 @@ var Arrays = new function() {
   };
   instance.wrap = function(array, prop) {
     for (var i=0, len=array.length; i<len; i++) {
-      array[i][prop] = array[i];
+      var value = {};
+      value[prop] = array[i];
+      array[i] = value;
     }
     return array;
-  }
+  };
+  this.rake = function(array, keep) {
+    array = array || [];
+    for (var i=array.length - 1; i >= 0; i--) {
+      var value = array[i];
+      if (!Voids.keep(value)) {
+        Arrays.remove(array, i, i+1);
+      }
+    }
+    return array;
+  };
   instance.apply = function(fn, items) {
     var result = [];
     for (var i = 0; i < items.length; ++i) {
