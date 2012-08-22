@@ -370,12 +370,11 @@ var Selectors = new function() {
       }
       params.push(seg);
     }
-
     for (var i=0, len=tags.length; i<len; i++) {
       var sel = tags[i];
-      selectors.push(sel + Strings.concat(params));
+      selectors.push(sel + params.join(''));
     }
-    return Strings.concat(selectors, ', ');
+    return selectors.join(', ');
   };
 
   return instance;
@@ -482,6 +481,21 @@ var NameValues = new function() {
     }
     return result;
   };
+  instance.toHashList = function(namevalues) {
+    var result = {};
+    for (var i=0, len=namevalues.length; i<len; i++) {
+      var tuple = namevalues[i];
+      var list;
+      if (tuple.name in result) {
+        list = result[tuple.name];
+      } else {
+        list = [];
+        result[tuple.name] = list;
+      }
+      list.push(tuple.value);
+    }
+    return result;
+  };
   instance.names = function(namevalues) {
     var result = [];
     for (var i=0, len=namevalues.length; i<len; i++) {
@@ -492,7 +506,7 @@ var NameValues = new function() {
       result.push(name);
     }
     return result;
-  }
+  };
   return instance;
 };
 var Voids = new function() {
