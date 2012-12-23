@@ -445,13 +445,13 @@ var Strings = new function() {
     return "[" + name.replace("]", "]]") + "]";
   };
   instance.trim = function(str) {
-    return str.replace(/^\s+|\s+$/, '');
+    return (str || '').replace(/^\s+|\s+$/, '');
   };
   instance.startsWith = function(str, prefix) {
-    return str.indexOf(prefix) === 0;
+    return str && str.indexOf(prefix) === 0;
   };
   instance.endsWith = function(str, suffix) {
-    return str.indexOf(suffix, str.length - suffix.length) !== -1;
+    return str && str.indexOf(suffix, str.length - suffix.length) !== -1;
   };
   return instance;
 };
