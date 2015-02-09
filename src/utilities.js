@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010 - 2012, BeeDesk, Inc., unless otherwise noted.
+ * Copyright (c) 2010 - 2015, BeeDesk, Inc., unless otherwise noted.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -352,8 +352,8 @@ var Selectors = new function() {
   var instance = this;
 
   /***
-   * Translate: 
-   *     ['input', 'textarea'], {name: 'foo', value: null} 
+   * Translate:
+   *     ['input', 'textarea'], {name: 'foo', value: null}
    * into
    *     'input[name="foo"][value], textarea[name="foo"][value]
    */
@@ -394,12 +394,12 @@ var Strings = new function() {
         var re = new RegExp("\\{"+(i-1)+"}", "gim");
         formatted_str = formatted_str.replace(re, arguments[i]);
     }
-    
+
     return formatted_str;
   };
   instance.join = function(delim, strs) {
     /* arguments should've been swaped. Use concat() */
-    delim = delim || ''; 
+    delim = delim || '';
     if (strs.length === 0)
         return '';
 
@@ -460,7 +460,7 @@ var NameValues = new function() {
   var instance = this;
   instance.toHash = function(namevalues, names, arraynames) {
     var result = {};
-    
+
     if (names === undefined || names === null) {
       names = NameValues.names(namevalues);
       if (Arrays.isa(arraynames)) {
@@ -599,7 +599,7 @@ var Hashs = new function() {
   this.extract = function(entity, names, keep_undefined, keep_null) {
     var result = {};
     for (var i = 0; i < names.length; ++i) {
-      var name = names[i]; 
+      var name = names[i];
       if (name in entity) {
         var value = entity[name];
         if (value === undefined) {
@@ -809,7 +809,7 @@ var URLs = new function() {
   };
   return instance;
 };
-                           
+
 var NameArrays = new function() {
   var instance = this;
   this.path = function(node, zeroormore) {
@@ -1069,7 +1069,7 @@ var Arguments = new function() {
 
 /**
  * Supports trigger, bind, unbind
- * 
+ *
  * @author: thomas at beedesk DOT com
  */
 var Binds = new function() {
@@ -1079,12 +1079,12 @@ var Binds = new function() {
     var binder = {};
     var handlers = [];
 
-    binder.bind = function(type, fn) {
+    binder.on = binder.bind = function(type, fn) {
       var filter = typeof(type) === "string"?  {type: type}: type;
       var handler = $.extend({fn: fn}, filter);
       return handlers.push(handler);
     };
-    binder.unbind = function(type, fn) {
+    binder.off = binder.unbind = function(type, fn) {
       var filter = typeof(type) === "string"?  {type: type}: type;
       filter = fn === undefined? filter: $.extend({fn: fn}, filter);
       HashArrays.remove(handlers, filter);
@@ -1109,7 +1109,7 @@ var Binds = new function() {
     };
     return binder;
   };
-  
+
   instance.simple = function(conf) {
     return new Binder(conf);
   };
@@ -1118,17 +1118,17 @@ var Binds = new function() {
     var inner = new Binder(conf);
     var events = [];
 
-    binder.bind = function(type, fn) {
+    binder.on = binder.bind = function(type, fn) {
       var result = inner.bind.apply(this, arguments);
 
       var matched = type==='*'? events: HashArrays.find(events, {type: type});
       for (var i=0, len=matched.length; i<len; i++) {
         fn.apply(this, matched[i].arguments);
       }
-      
+
       return result;
     };
-    binder.unbind = function(type, fn) {
+    binder.off = binder.unbind = function(type, fn) {
       return inner.unbind.apply(this, arguments);
     };
     binder.trigger = function(type, args) {
@@ -1144,7 +1144,7 @@ var Binds = new function() {
       return binder;
     };
 
-    return binder; 
+    return binder;
   };
 
   return instance;
