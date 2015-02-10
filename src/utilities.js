@@ -189,7 +189,7 @@ var Dates = new function() {
         result = true;
       }
     } else {
-      console.error("date: [" + datetime + "] typeof: [" + typeof(dateitem) + "]");
+      console.console.error("date: [" + datetime + "] typeof: [" + typeof(dateitem) + "]");
     }
     return result;
   };
@@ -1080,67 +1080,109 @@ var Binds = new function() {
     var handlers = [];
 
     binder.on = binder.bind = function(type, fn) {
-      var filter = typeof(type) === "string"?  {type: type}: type;
-      var handler = $.extend({fn: fn}, filter);
-      return handlers.push(handler);
+      var filter, handler;
+
+      filter = typeof(type) === "string"?  {type: type}: type;
+      handler = $.extend({fn: fn}, filter);
+      handlers.push(handler);
+
+      return binder;
     };
+
     binder.off = binder.unbind = function(type, fn) {
-      var filter = typeof(type) === "string"?  {type: type}: type;
+      var filter;
+
+      filter = typeof(type) === "string"?  {type: type}: type;
       filter = fn === undefined? filter: $.extend({fn: fn}, filter);
       HashArrays.remove(handlers, filter);
+
+      return binder;
     };
-    binder.trigger = function(type, oneormoreparams) {
-      var count = 0;
 
-      var args = Array.prototype.slice.call(arguments).splice(1);
-      var filter = typeof(type) === "string"?  {type: type}: type;
-      var matches = HashArrays.find(handlers, filter);
-      var wildcards = HashArrays.find(handlers, {type: '*'});
+    binder.trigger = function(type, params, summary) {
+      var j, count = 0,
+          args = [{type: type}],
+          filter = typeof(type) === "string"?  {type: type}: type,
+          matches = HashArrays.find(handlers, filter),
+          wildcards = HashArrays.find(handlers, {type: '*'}),
+          items = [].concat(matches).concat(wildcards);
 
-      var items = [].concat(matches).concat(wildcards);
-      for (var j=0, len=items.length; j < len; j++) {
+      // normalize args
+      if (typeof params !== 'undefined' && params !== null) {
+        if (typeof params === 'string' || typeof params === 'number') {
+          args.push(params);
+        } else if ('length' in params) { // array
+          Array.prototype.push.apply(args, params);
+        }
+      }
+
+      // callback all
+      for (j=0, len=items.length; j < len; j++) {
         count++;
         ret = items[j].fn.apply(this, args);
         if (ret === false) {
           break;
         }
       }
-      return count;
+      summary && $.isFunction(summary) && summary(count);
+
+      return binder;
     };
+
     return binder;
   };
 
   instance.simple = function(conf) {
     return new Binder(conf);
   };
+
   instance.retentive = function(conf) {
     var binder = {};
     var inner = new Binder(conf);
     var events = [];
 
     binder.on = binder.bind = function(type, fn) {
-      var result = inner.bind.apply(this, arguments);
+      var matched, i;
 
-      var matched = type==='*'? events: HashArrays.find(events, {type: type});
-      for (var i=0, len=matched.length; i<len; i++) {
+      inner.bind.apply(this, arguments);
+
+      matched = type==='*'? events: HashArrays.find(events, {type: type});
+      for (i=0, len=matched.length; i<len; i++) {
         fn.apply(this, matched[i].arguments);
       }
 
-      return result;
+      return binder;
     };
-    binder.off = binder.unbind = function(type, fn) {
-      return inner.unbind.apply(this, arguments);
-    };
-    binder.trigger = function(type, args) {
-      var result = inner.trigger.apply(this, arguments);
 
-      var args = Array.prototype.slice.call(arguments).splice(1);
+    binder.off = binder.unbind = function(type, fn) {
+      inner.unbind.apply(this, arguments);
+
+      return binder;
+    };
+
+    binder.trigger = function(type, params, summary) {
+      var args = [{type: type}];
+
+      inner.trigger.apply(this, arguments);
+
+      // normalize args
+      if (typeof params !== 'undefined' && params !== null) {
+        if (typeof params === 'string' || typeof params === 'number') {
+          args.push(params);
+        } else if ('length' in params) { // array
+          Array.prototype.push.apply(args, params);
+        }
+      }
+
+      // retain arguments
       events.push({type: type, arguments: args});
 
-      return result;
+      return binder;
     };
-    binder.forget = function(conf) {
+
+    binder.clear = binder.forget = function(conf) {
       events = [];
+
       return binder;
     };
 
